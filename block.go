@@ -1,6 +1,10 @@
 package main
 
-import "time"
+import (
+	"bytes"
+	"encoding/gob"
+	"time"
+)
 
 type blockService interface {
 	// Add a new node to the list
@@ -58,6 +62,29 @@ func NewBlock(data string, previousHash []byte) *Block {
 	return block
 }
 
-func GenerateFirstBlock() *Block {
+func GenesisBlock() *Block {
 	return NewBlock("Genesis Starting Block", []byte{})
+}
+
+// Serializing the block structs
+func (b *Block) SerializeBlock() []byte {
+	// A Buffer is a variable-sized buffer of bytes with Read and Write methods.
+	// The zero value for Buffer is an empty buffer ready to use.
+	var result bytes.Buffer
+
+	encoder := gob.NewEncoder(&result)
+
+	err := encoder.Encode(b)
+
+	return result.Bytes()
+}
+
+// Deserialize the byte array and turn it into a block
+func DeserializeBlock(de []byte) *Block {
+	var block Block
+
+	decoder := gob.NewDecoder(bytes.NewReader(de))
+	err := decoder.Decode(&block)
+
+	return &block
 }

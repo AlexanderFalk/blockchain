@@ -50,14 +50,15 @@ func (chain *Blockchain) AddBlock(data string) {
 			if err != nil {
 				log.Panic(err)
 			}
-			err = block.Put([]byte("1", newBlock.Hash))
+			err = block.Put([]byte("1"), newBlock.Hash)
+			if err != nil {
+				log.Panic(err)
+			}
 			chain.tip = newBlock.Hash
-
 			return nil
 		})
-	})
 
-	chain.chain = append(chain.chain, newBlock)
+	})
 }
 
 // We need a starting point, which is why this function is implemented. This is to generate a first time block

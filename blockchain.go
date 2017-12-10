@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/boltdb/bolt"
 	"log"
+	"time"
 )
 
 type Blockchain struct {
@@ -44,20 +45,13 @@ func (chain *Blockchain) AddBlock(data string) {
 		if err != nil {
 			log.Panic(err)
 		}
-		err = chain.database.Update(func(tx *bolt.Tx) error {
-			block := tx.Bucket([]byte(blocksBucket))
-			err := block.Put(newBlock.Hash, newBlock.SerializeBlock())
-			if err != nil {
-				log.Panic(err)
-			}
-			err = block.Put([]byte("1"), newBlock.Hash)
-			if err != nil {
-				log.Panic(err)
-			}
-			chain.tip = newBlock.Hash
-			return nil
-		})
+		err = block.Put([]byte("1"), newBlock.Hash)
+		if err != nil {
+			log.Panic(err)
+		}
+		chain.tip = newBlock.Hash
 
+		return nil
 	})
 }
 
@@ -77,7 +71,7 @@ func NewBlockChain() *Blockchain {
 	err = db.Update(func(tx *bolt.Tx) error {
 		block := tx.Bucket([]byte(blocksBucket))
 
-		if block == null {
+		if block == nil {
 			fmt.Println("No existing block... Creating a new")
 			newGenesis := GenesisBlock()
 
@@ -86,7 +80,7 @@ func NewBlockChain() *Blockchain {
 				log.Panic(err)
 			}
 
-			err = block.Put(newGenesis.Hash, newGenesis.Serialize())
+			err = block.Put(newGenesis.Hash, newGenesis.SerializeBlock())
 			if err != nil {
 				log.Panic(err)
 			}
@@ -112,7 +106,7 @@ func NewBlockChain() *Blockchain {
 
 	bc := Blockchain{tip, db}
 
-	return &Blockchain{[]*Block{GenesisBlock()}}
+	return &bc
 }
 
 // An iterator initially points at the tip of a blockchain
@@ -125,8 +119,8 @@ func (it *BlockchainIterator) next() *Block {
 	var block *Block
 
 	err := it.db.View(func(tx *bolt.Tx) error {
-		block := tx.Bucket([]byte(blocksBucket))
-		decode := block.Get(it.currentHash)
+		b := tx.Bucket([]byte(blocksBucket))
+		decode := b.Get(it.currentHash)
 		block = DeserializeBlock(decode)
 
 		return nil

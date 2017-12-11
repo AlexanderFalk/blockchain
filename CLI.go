@@ -36,7 +36,7 @@ func (cli *CLI) format() {
 		block := chain.next()
 
 		fmt.Printf("Index: %d\n", block.Index)
-		fmt.Printf("Timestamp: %d\n", block.Nonce)
+		fmt.Printf("Timestamp: %d\n", block.Timestamp)
 		fmt.Printf("Prev hash: %x\n", block.Previous)
 		fmt.Printf("Block Data: %s\n", block.Data)
 		fmt.Printf("Block Hash: %x\n", block.Hash)
@@ -72,7 +72,7 @@ func (cli *CLI) Program() {
 			log.Panic(err)
 		}
 	default:
-		cli.format()
+		cli.usage()
 		os.Exit(1)
 	}
 

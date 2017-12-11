@@ -129,5 +129,7 @@ func (it *BlockchainIterator) next() *Block {
 		log.Panic(err)
 	}
 
+	it.currentHash = block.Previous
+
 	return block
 }

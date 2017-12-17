@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"encoding/gob"
 	"log"
 	"time"
@@ -26,16 +27,13 @@ type blockService interface {
 }
 
 type Block struct {
-	Index     int64
-	Data      []byte
-	Timestamp int64
-	Hash      []byte
-	Previous  []byte
-	Proof     []byte
-	Nonce     int
-}
-
-type Transaction struct {
+	Index        int64
+	Transactions []*Transaction
+	Timestamp    int64
+	Hash         []byte
+	Previous     []byte
+	Proof        []byte
+	Nonce        int
 }
 
 type Token struct {
@@ -43,11 +41,11 @@ type Token struct {
 
 var index int64 = 0
 
-func NewBlock(data string, previousHash []byte) *Block {
+func NewBlock(transactions []*Transaction, previousHash []byte) *Block {
 	index++
 	block := &Block{
 		index,
-		[]byte(data),
+		transactions,
 		time.Now().Unix(),
 		[]byte{},
 		previousHash,
@@ -63,8 +61,20 @@ func NewBlock(data string, previousHash []byte) *Block {
 	return block
 }
 
-func GenesisBlock() *Block {
-	return NewBlock("Genesis Starting Block", []byte{})
+func (b *Block) HashTransactions() []byte {
+	var txHashes [][]byte
+	var txHash [32]byte
+
+	for _, tx := range b.Transactions {
+		txHashes = append(txHashes, tx.ID)
+	}
+	txHash = sha256.Sum256(bytes.Join(txHashes, []byte{}))
+
+	return txHash[:]
+}
+
+func GenesisBlock(coinbase *Transaction) *Block {
+	return NewBlock([]*Transaction{coinbase}, []byte{})
 }
 
 // Serializing the block structs

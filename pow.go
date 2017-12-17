@@ -36,13 +36,13 @@ func ShiftBits(b *Block) *ProofOfWork {
 	return pow
 }
 
-// Should be replaced by the ProofOfWork -method
+// Should be replaced by the ProofOfWork -method . Preparing Data
 func (pow *ProofOfWork) GenerateHash(nonce int) []byte {
 	timestamp := []byte(strconv.FormatInt(pow.block.Timestamp, 10))
 	headers := bytes.Join(
 		[][]byte{
 			pow.block.Previous,
-			pow.block.Data,
+			pow.block.HashTransactions(),
 			timestamp,
 			[]byte(strconv.Itoa(nonce))},
 		[]byte{})
@@ -55,7 +55,7 @@ func (pow *ProofOfWork) RunProof() (int, []byte) {
 	var hash [32]byte
 	nonce := 0
 
-	fmt.Printf("Mining... \"%s\"\n", pow.block.Data)
+	fmt.Printf("Mining... \"%s\"\n", pow.block.Transactions)
 	for nonce < maxNonce {
 		data := pow.GenerateHash(nonce)
 		hash = sha256.Sum256(data)

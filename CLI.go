@@ -20,9 +20,9 @@ func (cli *CLI) createBlockchain(address string) {
 
 func (cli *CLI) usage() {
 	fmt.Println("Usage:")
-	fmt.Println(" getbalance -address ADDRESS - Get balance of address")
-	fmt.Println(" createblockchain -address ADDRESS - Creates a blockchain and send genesis block reward to ADDRESS")
-	fmt.Println(" format - print all the blocks in the blockchain")
+	fmt.Println(" block getbalance --address <ADDRESS> - Get balance of address.")
+	fmt.Println(" block createblockchain --address <ADDRESS> - Creates a blockchain and send genesis block reward to <ADDRESS>.")
+	fmt.Println(" block format - print all the blocks in the blockchain.")
 }
 
 func (cli *CLI) validateArgs() {

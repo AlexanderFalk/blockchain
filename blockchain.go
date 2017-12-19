@@ -64,7 +64,7 @@ func (bc *Blockchain) FindUnspentTransactions(address string) []Transaction {
 	bci := bc.Iterator()
 
 	for {
-		block := bci.next()
+		block := bci.Next()
 
 		for _, tx := range block.Transactions {
 			txID := hex.EncodeToString(tx.ID)
@@ -85,7 +85,7 @@ func (bc *Blockchain) FindUnspentTransactions(address string) []Transaction {
 
 				// if an output was locked by the same address we're searching unspent transaction outputs for,
 				// then this is the output we want.
-				if out.CanBeUnockedWith(address) {
+				if out.CanBeUnlockedWith(address) {
 					unspentTXs = append(unspentTXs, *tx)
 				}
 			}
@@ -174,34 +174,27 @@ func CreateBlockchain(address string) *Blockchain {
 	}
 	// tx represents the internal transaction identifier
 	err = db.Update(func(tx *bolt.Tx) error {
-		block := tx.Bucket([]byte(blocksBucket))
+		cbtx := NewCoinbaseTX(address, genesisCoinbaseData)
+		newGenesis := GenesisBlock(cbtx)
 
-		if block == nil {
-			fmt.Println("No existing block... Creating a new")
-			cbtx := NewCoinbaseTX(address, genesisCoinbaseData)
-			newGenesis := GenesisBlock(cbtx)
-
-			block, err := tx.CreateBucket([]byte(blocksBucket))
-			if err != nil {
-				log.Panic(err)
-			}
-
-			err = block.Put(newGenesis.Hash, newGenesis.SerializeBlock())
-			if err != nil {
-				log.Panic(err)
-			}
-
-			// If it exists, we read the l key from it; if it doesn’t exist,
-			// we generate the genesis block, create the bucket, save the block into it,
-			// and update the l key storing the last block hash of the chain.
-			err = block.Put([]byte("1"), newGenesis.Hash)
-			if err != nil {
-				log.Panic(err)
-			}
-			tip = newGenesis.Hash
-		} else {
-			tip = block.Get([]byte("1"))
+		block, err := tx.CreateBucket([]byte(blocksBucket))
+		if err != nil {
+			log.Panic(err)
 		}
+
+		err = block.Put(newGenesis.Hash, newGenesis.SerializeBlock())
+		if err != nil {
+			log.Panic(err)
+		}
+
+		// If it exists, we read the l key from it; if it doesn’t exist,
+		// we generate the genesis block, create the bucket, save the block into it,
+		// and update the l key storing the last block hash of the chain.
+		err = block.Put([]byte("1"), newGenesis.Hash)
+		if err != nil {
+			log.Panic(err)
+		}
+		tip = newGenesis.Hash
 
 		return nil
 	})
@@ -221,7 +214,7 @@ func (chain *Blockchain) Iterator() *BlockchainIterator {
 	return it
 }
 
-func (it *BlockchainIterator) next() *Block {
+func (it *BlockchainIterator) Next() *Block {
 	var block *Block
 
 	err := it.db.View(func(tx *bolt.Tx) error {

@@ -20,6 +20,7 @@ func (cli *CLI) createBlockchain(address string) {
 
 func (cli *CLI) usage() {
 	fmt.Println("Usage:")
+	fmt.Println(" getbalance -address ADDRESS - Get balance of address")
 	fmt.Println(" createblockchain -address ADDRESS - Creates a blockchain and send genesis block reward to ADDRESS")
 	fmt.Println(" format - print all the blocks in the blockchain")
 }
@@ -49,12 +50,12 @@ func (cli *CLI) format() {
 	chain := cli.bc.Iterator()
 	for {
 
-		block := chain.next()
+		block := chain.Next()
 
 		fmt.Printf("Index: %d\n", block.Index)
 		fmt.Printf("Timestamp: %d\n", block.Timestamp)
 		fmt.Printf("Prev hash: %x\n", block.Previous)
-		fmt.Printf("Block Transctions: %s\n", block.Transactions)
+		fmt.Printf("Block Transactions: %d\n", block.Transactions)
 		fmt.Printf("Block Hash: %x\n", block.Hash)
 		pow := ShiftBits(block)
 		fmt.Printf("Proof of Work: %s\n", strconv.FormatBool(pow.ValidProof()))
@@ -72,10 +73,11 @@ func (cli *CLI) Program() {
 	//addBlockCmd := flag.NewFlagSet("addblock", flag.ExitOnError)
 	createBlockchainCmd := flag.NewFlagSet("createblockchain", flag.ExitOnError)
 	formatCmd := flag.NewFlagSet("format", flag.ExitOnError)
+	balanceCmd := flag.NewFlagSet("getbalance", flag.ExitOnError)
 
 	//data := addBlockCmd.String("data", "", "Block data")
-	createBlockchainAddress := createBlockchainCmd.String("address", "value", "The address to send the reward to")
-
+	createBlockchainAddress := createBlockchainCmd.String("address", "", "The address to send the reward to")
+	balanceAddress := balanceCmd.String("address", "", "The balance of the address")
 	switch os.Args[1] {
 	case "createblockchain":
 		err := createBlockchainCmd.Parse(os.Args[2:])
@@ -83,6 +85,11 @@ func (cli *CLI) Program() {
 			log.Panic(err)
 		}
 
+	case "getbalance":
+		err := balanceCmd.Parse(os.Args[2:])
+		if err != nil {
+			log.Panic(err)
+		}
 	case "format":
 		err := formatCmd.Parse(os.Args[2:])
 		if err != nil {
@@ -100,6 +107,14 @@ func (cli *CLI) Program() {
 			os.Exit(1)
 		}
 		cli.createBlockchain(*createBlockchainAddress)
+	}
+
+	if balanceCmd.Parsed() {
+		if *balanceAddress == "" {
+			balanceCmd.Usage()
+			os.Exit(1)
+		}
+		cli.getBalance(*balanceAddress)
 	}
 
 	if formatCmd.Parsed() {

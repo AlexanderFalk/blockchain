@@ -55,7 +55,7 @@ func (pow *ProofOfWork) RunProof() (int, []byte) {
 	var hash [32]byte
 	nonce := 0
 
-	fmt.Printf("Mining... \"%s\"\n", pow.block.Transactions)
+	fmt.Printf("Mining a new block")
 	for nonce < maxNonce {
 		data := pow.GenerateHash(nonce)
 		hash = sha256.Sum256(data)

@@ -106,9 +106,13 @@ $ docker ps
 
 
 
-Now, to try out the blockchain on 
+Now, to try out the blockchain you need to run a blockchain command on one of the peers. For example, you could try to create a transaction to "Jules" with peer number one:
 
+```sh
+$ docker exec -d peer1 /blockchain/block createblockchain --address Jules
+```
 
+...
 
 
 

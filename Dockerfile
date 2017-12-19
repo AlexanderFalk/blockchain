@@ -10,6 +10,7 @@ WORKDIR /blockchain
 COPY block.go /blockchain/block.go
 COPY blockchain.go /blockchain/blockchain.go
 COPY pow.go /blockchain/pow.go
+COPY transaction.go /blockchain/transaction.go
 COPY CLI.go /blockchain/CLI.go
 COPY run.go /blockchain/run.go
 
@@ -17,11 +18,6 @@ COPY run.go /blockchain/run.go
 EXPOSE 8080
 
 # Building and running the blockchain when the container is started
-#RUN go build /blockchain/block.go
-#RUN go build /blockchain/blockchain.go
-#RUN go build /blockchain/pow.go
-#RUN go build /blockchain/CLI.go
-#RUN go build /blockchain/run.go
+RUN go build /blockchain/block.go /blockchain/blockchain.go /blockchain/pow.go /blockchain/transaction.go /blockchain/CLI.go /blockchain/run.go
 
-#ENTRYPOINT ./block
-ENTRYPOINT /bin/bash
+ENTRYPOINT ./block #- startup command here

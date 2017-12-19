@@ -17,11 +17,10 @@ COPY run.go /blockchain/run.go
 EXPOSE 8080
 
 # Building and running the blockchain when the container is started
-#RUN go build /blockchain/block.go
-#RUN go build /blockchain/blockchain.go
-#RUN go build /blockchain/pow.go
-#RUN go build /blockchain/CLI.go
-#RUN go build /blockchain/run.go
+RUN go build /blockchain/block.go
+RUN go build /blockchain/blockchain.go
+RUN go build /blockchain/pow.go
+RUN go build /blockchain/CLI.go
+RUN go build /blockchain/run.go
 
-#ENTRYPOINT ./block
-ENTRYPOINT /bin/bash
+ENTRYPOINT ./block

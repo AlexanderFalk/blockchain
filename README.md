@@ -108,6 +108,8 @@ Now, to try out the blockchain you need to run a blockchain command on one of th
 $ docker exec -d peer1 /blockchain/block createblockchain --address Jules
 ```
 
+This command will execute the `createblockchain` command on the container named "peer1".
+
 ...
 
 

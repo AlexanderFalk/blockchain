@@ -14,7 +14,6 @@ This repository contains Group14's solution to the 2017 System Integration [bloc
   * Block mining.
     * At least two versions for mining - used for Proof of Work.
 
-      ​
 
 ### Formal
 
@@ -28,27 +27,27 @@ This repository contains Group14's solution to the 2017 System Integration [bloc
 
 * References for **all** information sources used for development/implementation.
 
-  ​
 
 ### Optional
 
-* User interface.
+* User interface.​
 
-  ​
 
-##Own specifications
+### Own specifications
 
 * We are writing the blockchain in [Go](https://golang.org/#).
+
 * We are using Docker containers for our network of nodes.
+
 * We are launching the four peers/Docker containers using `docker-compose`
+
+  ​
 
 
 
 ## Get started
 
 To setup and test our Blockchain simulation, follow these steps.
-
-
 
 ### Prerequisites
 
@@ -58,7 +57,6 @@ To setup and test our Blockchain simulation, follow these steps.
 
 * You need to have a Bash shell installed (Terminal, iTerm2, Git Bash etc.).
 
-  ​
 
 ### Installation
 
@@ -93,8 +91,6 @@ To setup and test our Blockchain simulation, follow these steps.
 
 
 The script will now automatically build a proper Docker image that handles building the Go files, while simultaneously launching four separate containers, acting as peers.
-
-
 
 ### Usage
 

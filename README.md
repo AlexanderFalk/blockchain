@@ -94,6 +94,31 @@ The script will now automatically build a proper Docker image that handles build
 
 ### Usage
 
+To run the blockchain locally, type the following in the terminal:
+
+``` 
+$ go build
+```
+And then you can create a blockchain by typing:
+```
+$ ./blockchain createblockchain --address Jules
+```
+
+Here is some other things you can do:
+
+To print out the chain:
+```
+$ ./blockchain printchain
+```
+To get the balance of a user:
+```
+$ ./blockchain getbalance --address Ivan
+```
+To send from one user to another:
+```
+$ ./blockchain send -from Ivan -to Pedro -amount 6
+```
+
 If you followed the instructions of the previous section, then four peers should have been launched on your machine as Docker containers. You should now be able to see these containers as processes if you type:
 
 ```sh

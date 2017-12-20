@@ -8,36 +8,21 @@ import (
 	"strconv"
 )
 
-type CLI struct {
-	bc *Blockchain
-}
+// CLI responsible for processing command line arguments
+type CLI struct{}
 
 func (cli *CLI) createBlockchain(address string) {
-	chain := CreateBlockchain(address)
-	chain.database.Close()
-	fmt.Println("Created a new blockchain!")
+	bc := CreateBlockchain(address)
+	bc.db.Close()
+	fmt.Println("Done!")
 }
 
-func (cli *CLI) usage() {
-	fmt.Println("Usage:")
-	fmt.Println(" block getbalance --address <ADDRESS> - Get balance of address.")
-	fmt.Println(" block createblockchain --address <ADDRESS> - Creates a blockchain and send genesis block reward to <ADDRESS>.")
-	fmt.Println(" block format - print all the blocks in the blockchain.")
-}
-
-func (cli *CLI) validateArgs() {
-	if len(os.Args) < 2 {
-		cli.format()
-	}
-}
-
-// The account balance is the sum of values of all unspent transactions outputs locked by the account address
 func (cli *CLI) getBalance(address string) {
-	chain := NewBlockChain(address)
-	defer chain.database.Close()
+	bc := NewBlockchain(address)
+	defer bc.db.Close()
 
 	balance := 0
-	UTXOs := chain.FindUTXO(address)
+	UTXOs := bc.FindUTXO(address)
 
 	for _, out := range UTXOs {
 		balance += out.Value
@@ -46,78 +31,119 @@ func (cli *CLI) getBalance(address string) {
 	fmt.Printf("Balance of '%s': %d\n", address, balance)
 }
 
-func (cli *CLI) format() {
-	chain := cli.bc.Iterator()
+func (cli *CLI) printUsage() {
+	fmt.Println("Usage:")
+	fmt.Println("  getbalance -address ADDRESS - Get balance of ADDRESS")
+	fmt.Println("  createblockchain -address ADDRESS - Create a blockchain and send genesis block reward to ADDRESS")
+	fmt.Println("  printchain - Print all the blocks of the blockchain")
+	fmt.Println("  send -from FROM -to TO -amount AMOUNT - Send AMOUNT of coins from FROM address to TO")
+}
+
+func (cli *CLI) validateArgs() {
+	if len(os.Args) < 2 {
+		cli.printUsage()
+		os.Exit(1)
+	}
+}
+
+func (cli *CLI) printChain() {
+	// TODO: Fix this
+	bc := NewBlockchain("")
+	defer bc.db.Close()
+
+	bci := bc.Iterator()
+
 	for {
+		block := bci.Next()
 
-		block := chain.Next()
-
-		fmt.Printf("Index: %d\n", block.Index)
-		fmt.Printf("Timestamp: %d\n", block.Timestamp)
-		fmt.Printf("Prev hash: %x\n", block.Previous)
-		fmt.Printf("Block Transactions: %d\n", block.Transactions)
-		fmt.Printf("Block Hash: %x\n", block.Hash)
-		pow := ShiftBits(block)
-		fmt.Printf("Proof of Work: %s\n", strconv.FormatBool(pow.ValidProof()))
+		fmt.Printf("Prev. hash: %x\n", block.PrevBlockHash)
+		fmt.Printf("Hash: %x\n", block.Hash)
+		pow := NewProofOfWork(block)
+		fmt.Printf("PoW: %s\n", strconv.FormatBool(pow.Validate()))
 		fmt.Println()
 
-		if len(block.Previous) == 0 {
+		if len(block.PrevBlockHash) == 0 {
 			break
 		}
 	}
 }
 
-func (cli *CLI) Program() {
+func (cli *CLI) send(from, to string, amount int) {
+	bc := NewBlockchain(from)
+	defer bc.db.Close()
+
+	tx := NewUTXOTransaction(from, to, amount, bc)
+	bc.MineBlock([]*Transaction{tx})
+	fmt.Println("Success!")
+}
+
+// Run parses command line arguments and processes commands
+func (cli *CLI) Run() {
 	cli.validateArgs()
 
-	//addBlockCmd := flag.NewFlagSet("addblock", flag.ExitOnError)
+	getBalanceCmd := flag.NewFlagSet("getbalance", flag.ExitOnError)
 	createBlockchainCmd := flag.NewFlagSet("createblockchain", flag.ExitOnError)
-	formatCmd := flag.NewFlagSet("format", flag.ExitOnError)
-	balanceCmd := flag.NewFlagSet("getbalance", flag.ExitOnError)
+	sendCmd := flag.NewFlagSet("send", flag.ExitOnError)
+	printChainCmd := flag.NewFlagSet("printchain", flag.ExitOnError)
 
-	//data := addBlockCmd.String("data", "", "Block data")
-	createBlockchainAddress := createBlockchainCmd.String("address", "", "The address to send the reward to")
-	balanceAddress := balanceCmd.String("address", "", "The balance of the address")
+	getBalanceAddress := getBalanceCmd.String("address", "", "The address to get balance for")
+	createBlockchainAddress := createBlockchainCmd.String("address", "", "The address to send genesis block reward to")
+	sendFrom := sendCmd.String("from", "", "Source wallet address")
+	sendTo := sendCmd.String("to", "", "Destination wallet address")
+	sendAmount := sendCmd.Int("amount", 0, "Amount to send")
+
 	switch os.Args[1] {
+	case "getbalance":
+		err := getBalanceCmd.Parse(os.Args[2:])
+		if err != nil {
+			log.Panic(err)
+		}
 	case "createblockchain":
 		err := createBlockchainCmd.Parse(os.Args[2:])
 		if err != nil {
 			log.Panic(err)
 		}
-
-	case "getbalance":
-		err := balanceCmd.Parse(os.Args[2:])
+	case "printchain":
+		err := printChainCmd.Parse(os.Args[2:])
 		if err != nil {
 			log.Panic(err)
 		}
-	case "format":
-		err := formatCmd.Parse(os.Args[2:])
+	case "send":
+		err := sendCmd.Parse(os.Args[2:])
 		if err != nil {
 			log.Panic(err)
 		}
 	default:
-		cli.usage()
+		cli.printUsage()
 		os.Exit(1)
+	}
+
+	if getBalanceCmd.Parsed() {
+		if *getBalanceAddress == "" {
+			getBalanceCmd.Usage()
+			os.Exit(1)
+		}
+		cli.getBalance(*getBalanceAddress)
 	}
 
 	if createBlockchainCmd.Parsed() {
 		if *createBlockchainAddress == "" {
-
 			createBlockchainCmd.Usage()
 			os.Exit(1)
 		}
 		cli.createBlockchain(*createBlockchainAddress)
 	}
 
-	if balanceCmd.Parsed() {
-		if *balanceAddress == "" {
-			balanceCmd.Usage()
-			os.Exit(1)
-		}
-		cli.getBalance(*balanceAddress)
+	if printChainCmd.Parsed() {
+		cli.printChain()
 	}
 
-	if formatCmd.Parsed() {
-		cli.format()
+	if sendCmd.Parsed() {
+		if *sendFrom == "" || *sendTo == "" || *sendAmount <= 0 {
+			sendCmd.Usage()
+			os.Exit(1)
+		}
+
+		cli.send(*sendFrom, *sendTo, *sendAmount)
 	}
 }

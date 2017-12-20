@@ -1,7 +1,4 @@
-// Proof Of Work
 package main
-
-// https://en.bitcoin.it/wiki/Proof_of_work
 
 import (
 	"bytes"
@@ -9,80 +6,79 @@ import (
 	"fmt"
 	"math"
 	"math/big"
-	"strconv"
 )
 
-type powService interface {
-	// Simple Proof of Work
-	ShiftBits(lastProof []byte)
+var (
+	maxNonce = math.MaxInt64
+)
 
-	// Validation of proof
-	ValidProof(lastProof []byte, proof []byte) bool
-}
+const targetBits = 16
 
-var maxNonce = math.MaxInt64
-
+// ProofOfWork represents a proof-of-work
 type ProofOfWork struct {
 	block  *Block
 	target *big.Int
 }
 
-const bitManipulation = 16
+// NewProofOfWork builds and returns a ProofOfWork
+func NewProofOfWork(b *Block) *ProofOfWork {
+	target := big.NewInt(1)
+	target.Lsh(target, uint(256-targetBits))
 
-func ShiftBits(b *Block) *ProofOfWork {
-	bigInt := big.NewInt(1)
-	bigInt.Lsh(bigInt, uint(256-bitManipulation))
-	pow := &ProofOfWork{b, bigInt}
+	pow := &ProofOfWork{b, target}
+
 	return pow
 }
 
-// Should be replaced by the ProofOfWork -method . Preparing Data
-func (pow *ProofOfWork) GenerateHash(nonce int) []byte {
-	timestamp := []byte(strconv.FormatInt(pow.block.Timestamp, 10))
-	headers := bytes.Join(
+func (pow *ProofOfWork) prepareData(nonce int) []byte {
+	data := bytes.Join(
 		[][]byte{
-			pow.block.Previous,
+			pow.block.PrevBlockHash,
 			pow.block.HashTransactions(),
-			timestamp,
-			[]byte(strconv.Itoa(nonce))},
-		[]byte{})
+			IntToHex(pow.block.Timestamp),
+			IntToHex(int64(targetBits)),
+			IntToHex(int64(nonce)),
+		},
+		[]byte{},
+	)
 
-	return headers
+	return data
 }
 
-func (pow *ProofOfWork) RunProof() (int, []byte) {
-	var hashedInteger big.Int
+// Run performs a proof-of-work
+func (pow *ProofOfWork) Run() (int, []byte) {
+	var hashInt big.Int
 	var hash [32]byte
 	nonce := 0
 
 	fmt.Printf("Mining a new block")
 	for nonce < maxNonce {
-		data := pow.GenerateHash(nonce)
+		data := pow.prepareData(nonce)
+
 		hash = sha256.Sum256(data)
 		fmt.Printf("\r%x", hash)
-		hashedInteger.SetBytes(hash[:])
+		hashInt.SetBytes(hash[:])
 
-		if hashedInteger.Cmp(pow.target) == -1 {
+		if hashInt.Cmp(pow.target) == -1 {
 			break
 		} else {
 			nonce++
 		}
 	}
-
-	fmt.Println("\n\n")
+	fmt.Print("\n\n")
 
 	return nonce, hash[:]
 }
 
-func (pow *ProofOfWork) ValidProof() bool {
-	var hashedInteger big.Int
+// Validate validates block's PoW
+func (pow *ProofOfWork) Validate() bool {
+	var hashInt big.Int
 
-	data := pow.GenerateHash(pow.block.Nonce)
+	data := pow.prepareData(pow.block.Nonce)
 	hash := sha256.Sum256(data)
-	fmt.Printf("\r%x", hash)
-	hashedInteger.SetBytes(hash[:])
+	hashInt.SetBytes(hash[:])
 
-	isValid := hashedInteger.Cmp(pow.target) == -1
+	isValid := hashInt.Cmp(pow.target) == -1
 
 	return isValid
 }

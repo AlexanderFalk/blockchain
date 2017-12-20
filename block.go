@@ -8,59 +8,29 @@ import (
 	"time"
 )
 
-type blockService interface {
-	// Add a new node to the list
-	RegisterNode(address []byte) bool
-
-	// Create a new block in the blockchain
-	NewBlock(proof []byte, previousHash []byte) *Block
-
-	// Returns the last block in the chain
-	LastBlock() Block
-
-	// Adding block to the main chain
-	AddBlock(data []byte)
-
-	ValidChain(chain *[]Block) bool
-
-	Conflicts() bool
-}
-
+// Block keeps block headers
 type Block struct {
-	Index        int64
-	Transactions []*Transaction
-	Timestamp    int64
-	Hash         []byte
-	Previous     []byte
-	Proof        []byte
-	Nonce        int
+	Timestamp     int64
+	Transactions  []*Transaction
+	PrevBlockHash []byte
+	Hash          []byte
+	Nonce         int
 }
 
-type Token struct {
+// Serialize serializes the block
+func (b *Block) Serialize() []byte {
+	var result bytes.Buffer
+	encoder := gob.NewEncoder(&result)
+
+	err := encoder.Encode(b)
+	if err != nil {
+		log.Panic(err)
+	}
+
+	return result.Bytes()
 }
 
-var index int64 = 0
-
-func NewBlock(transactions []*Transaction, previousHash []byte) *Block {
-	index++
-	block := &Block{
-		index,
-		transactions,
-		time.Now().Unix(),
-		[]byte{},
-		previousHash,
-		[]byte{},
-		0}
-
-	pow := ShiftBits(block)
-	nonce, hash := pow.RunProof()
-
-	block.Hash = hash[:]
-	block.Nonce = nonce
-
-	return block
-}
-
+// HashTransactions returns a hash of the transactions in the block
 func (b *Block) HashTransactions() []byte {
 	var txHashes [][]byte
 	var txHash [32]byte
@@ -73,30 +43,28 @@ func (b *Block) HashTransactions() []byte {
 	return txHash[:]
 }
 
-func GenesisBlock(coinbase *Transaction) *Block {
+// NewBlock creates and returns Block
+func NewBlock(transactions []*Transaction, prevBlockHash []byte) *Block {
+	block := &Block{time.Now().Unix(), transactions, prevBlockHash, []byte{}, 0}
+	pow := NewProofOfWork(block)
+	nonce, hash := pow.Run()
+
+	block.Hash = hash[:]
+	block.Nonce = nonce
+
+	return block
+}
+
+// NewGenesisBlock creates and returns genesis Block
+func NewGenesisBlock(coinbase *Transaction) *Block {
 	return NewBlock([]*Transaction{coinbase}, []byte{})
 }
 
-// Serializing the block structs
-func (b *Block) SerializeBlock() []byte {
-	// A Buffer is a variable-sized buffer of bytes with Read and Write methods.
-	// The zero value for Buffer is an empty buffer ready to use.
-	var result bytes.Buffer
-
-	encoder := gob.NewEncoder(&result)
-
-	err := encoder.Encode(b)
-	if err != nil {
-		log.Panic(err)
-	}
-	return result.Bytes()
-}
-
-// Deserialize the byte array and turn it into a block
-func DeserializeBlock(de []byte) *Block {
+// DeserializeBlock deserializes a block
+func DeserializeBlock(d []byte) *Block {
 	var block Block
 
-	decoder := gob.NewDecoder(bytes.NewReader(de))
+	decoder := gob.NewDecoder(bytes.NewReader(d))
 	err := decoder.Decode(&block)
 	if err != nil {
 		log.Panic(err)

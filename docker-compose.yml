@@ -5,35 +5,22 @@ services:
     ports:
       - "8081:8081"
     container_name: peer1
-    #tty: true #To keep the containers alive to exec them. For testing purposes. 
-    #stdin_open: true
-
+    
   peer2:
     image: group14/blockchain
     ports:
       - "8082:8082"
     container_name: peer2
-    #links:
-      #- peer1
-    #tty: true
-    #stdin_open: true
-
+  
   peer3:
     image: group14/blockchain
     ports:
       - "8083:8083"
     container_name: peer3
-    #links:
-     # - peer2
-    #tty: true
-    #stdin_open: true
 
   peer4:
     image: group14/blockchain
     ports:
       - "8084:8084"
     container_name: peer4
-    #links:
-     # - peer3
-    #tty: true
-    #stdin_open: true
+    

@@ -20,4 +20,7 @@ EXPOSE 8080
 # Building and running the blockchain when the container is started
 RUN go build /blockchain/block.go /blockchain/blockchain.go /blockchain/pow.go /blockchain/transaction.go /blockchain/CLI.go /blockchain/run.go
 
-ENTRYPOINT ./block #- startup command here
+#For testing purposes. Avoids ./block errors.
+ENTRYPOINT ["/bin/bash"]
+
+#ENTRYPOINT ./block #- startup command here

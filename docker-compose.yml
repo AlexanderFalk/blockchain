@@ -1,7 +1,7 @@
 version: '3'
 services:
   peer1:
-    image: blockchain
+    image: group14/blockchain
     ports:
       - "8081:8081"
     container_name: peer1
@@ -9,7 +9,7 @@ services:
     #stdin_open: true
 
   peer2:
-    image: blockchain
+    image: group14/blockchain
     ports:
       - "8082:8082"
     container_name: peer2
@@ -19,7 +19,7 @@ services:
     #stdin_open: true
 
   peer3:
-    image: blockchain
+    image: group14/blockchain
     ports:
       - "8083:8083"
     container_name: peer3
@@ -29,7 +29,7 @@ services:
     #stdin_open: true
 
   peer4:
-    image: blockchain
+    image: group14/blockchain
     ports:
       - "8084:8084"
     container_name: peer4

@@ -119,6 +119,7 @@ To send from one user to another:
 $ ./blockchain send -from Ivan -to Pedro -amount 6
 ```
 
+#### Docker
 If you followed the instructions of the previous section, then four peers should have been launched on your machine as Docker containers. You should now be able to see these containers as processes if you type:
 
 ```sh

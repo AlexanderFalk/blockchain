@@ -95,18 +95,25 @@ The script will now automatically build a proper Docker image that handles build
 # Overview of concepts
 Our MVP Blockchain is built in Golang. Golang is very modern, when it comes to network programming and that is one of the main reason why we chose this language. 
 To explain how the blockchain works, we will go through what each file is during and what concepts that are covered by this program. 
-## Blocks
+
+### Blocks
+
 In blockchain a block is what store valuable information. In our example it stores transactions, which is the essence of any cryptocurrency. It also contains a timestamp, the hash of the block, the hash of the previous block, and a nonce. A nonce is an arbitrary number that is used in cryptography. In our case we will use it as an incremental value with our total hash value of all our block information. This is also called HashCash, which is a Proof-of-Work algorithm. It is a key concept within blockchain and it is used to make mining “hard”. The algorithm is used to fulfill a requirement of the hash value. In case of Bitcoin, the requirement is that “the first 20 bits of a hash must be zeros”. When you hash the block information at first, you might not hit that requirement, and therefore you need to use this algorithm. The idea is quite simple; you take the block hash value, increment it with one, and if it matches the requirement, then the block is validated. If it doesn’t, then you add one more and calculate the hash value. This incremental is happening until the requirement is met. 
 In our program, the target bits for the requirement is set to 16. This is done due to the time it takes to validate the block. 
-## Blockchain
+
+### Blockchain
+
 A blockchain is a simple database with a certain structure. It’s ordered and has a back-linked list. This means that the blocks are stored in the insertion order and each block is linked to the previous one. 
-## Persistence
-Since we don’t want to store the blockchain in memory, we’ve used a database called: BoltDB. BoltDB is a minimalistic golang database that doesn’t require a running server. Exactly what we need, since the blockchain must be decentralized, meaning, every active peer needs a copy of it. 
+
+### Persistence
+
+Since we don’t want to store the blockchain in memory, we’ve used a database called: [BoltDB](https://github.com/boltdb/bolt). BoltDB is a minimalistic golang database that doesn’t require a running server. Exactly what we need, since the blockchain must be decentralized, meaning, every active peer needs a copy of it. 
 BoltDB is a key/value storage, so there are no tables like in relational databases. This data is stored in what BoltDB is calling “buckets”. The buckets are collections of key/value pairs within the database. Another nice feature about BoltDB is that it is data-type independent. Everything is stored in byte arrays. In our case, we serialize our data first and then we add it to the bucket. To get the data out, we deserialize the data. This is done to get the block information back, when we need it from the blockchain. 
 The bucket is just a file on the disk, with the extension: “.db”.
 Before we can add a blockchain to the database file, we need an existing block. There must be at least one block to generate a blockchain and that block is called “genesis block”. New blocks has to refer to a previous block and therefore we need to “start” the chain, so other can use it. 
 
-## Transactions
+### Transactions
+
 This is the hard part. This is where it gets intense. A transaction is a combination of inputs and outputs (and amount). 
 An input is a record of which an address was used to send assets to an unknown output. It is a new transaction, which is referencing to an output of previous transactions. 
 An amount is even telling. What is being transferred. 
@@ -120,16 +127,17 @@ If Alice wants to send (the input) Mia 1.5 asset, she will have a problem. None 
 What she will have to do in this case is that she will have to send one of the incoming transactions, in this case Jane’s transaction, and then send it with a new input of 0.5, that will point to her with the “leftovers” as an output. 
 This is the core concept of the blockchain and it is very hard to wrap your head around. 
 
-## Putting it all together
+### Putting it all together
+
 For our blockchain you will be able to:  
 *	Create a new blockchain
 *	Write to a database file
 *	Mine a block and validate the Proof-of-Work
 *	Use the blockchain as a CLI command
-Below you will see the usage of the blockchain, which will describe how you use the blockchain. 
+  Below you will see the usage of the blockchain, which will describe how you use the blockchain. 
 
 
-### Usage
+## Usage
 
 To run the blockchain locally, type the following in the terminal:
 
@@ -140,7 +148,10 @@ You can create a blockchain with a new DB file, containing a genesis block, by t
 ```
 $ ./blockchain createblockchain --address Jules
 ```
+(The attached Dockerfile will also execute this step automatically) 
+
 You can print out the chain. This will open the database, look at the tip, print it out, take the next "tip" and print it out, and continue until our Next() function is empty:
+
 ```
 $ ./blockchain printchain
 ```
@@ -159,22 +170,23 @@ You'll then be able to retrieve the balance again for both Ivan and Pedro. Here 
 $ ./blockchain getbalance --address Ivan
 ```
 
-## Docker usage
-If you followed the instructions of the previous section, then four peers should have been launched on your machine as Docker containers. You should now be able to see these containers as processes if you type:
+### Docker usage
+
+If you followed the instructions of the [Installation section](#installation), then four peers should have been launched on your machine as Docker containers, and each have created a Genesis blockchain. The containers will shut down after this, because no other services are specified. You should be able to see these containers as processes if you type:
 
 ```sh
-$ docker ps
+$ docker ps -a
 ```
 
-Now, to try out the blockchain you need to run a blockchain command on one of the peers. For example, you could try to create a transaction to "Jules" with peer number one:
+It is perhaps arguable that Docker containers and `docker-compose` might not have been the right job for this, as Docker often isn't specifically used to boot virtual machines, but rather to boot special services. The idea behind the notes for this specific blockchain use-case, is that the machines should be kept alive in order to keep tab on the blockchain and to create transactions between each other. In the [next section](#issues) you can see a possible solution by using a Vagrantfile instead. 
+
+If, however, we were to keep the Docker containers alive by any means to run blockchain commands on them, one could try out some blockchain commands on one of the peers. For example, you could try to create a transaction to "Jules" with peer number one:
 
 ```sh
 $ docker exec -d peer1 /blockchain/block createblockchain --address Jules
 ```
 
-This command will execute the `createblockchain` command on the container named "peer1".
-
-...
+This command would then execute the `createblockchain` command on the container named "peer1".
 
 ## Issues
 We are aware of the fact that the blockchain can't be decentralized to multiple peers. We are able to communicate between the peers, but we haven't been able to setup a functional Peer-to-peer network, where each has a copy of the blockchain. One of the main issues are, that the nodes haven't been split into categories. We should've had a:
@@ -182,7 +194,7 @@ We are aware of the fact that the blockchain can't be decentralized to multiple 
 * Full node - Validate blocks that miners have mined. This one has a full copy of the blockchain. This is also the node that helps the other nodes to discover each other.  
 * Two mining nodes - Storing new transactions in mememory pool and when there're enough of transactions, it'll mine a new block. 
 
-As you see above, we've an idea of using Docker, but without actually using it as a P2P network. We simply couldn't get it up and running probably. 
+[As you can see above](#docker-usage), we've an idea of using Docker, but without actually using it as a P2P network. We simply couldn't get it up and running probably. 
 We also tried with vagrant and virtual machines. Here we instantiated 4 VM's, which got the blockchain CLI copied onto them, so they were able to execute it. The biggest issue here was that the program was not configured to let the nodes run with separated roles. This would've required a lot of changes in the blockchain CLI. 
 Below you can see the vagrantfile:
 ```
@@ -231,9 +243,26 @@ end
 
 
 
+## Screencast
+
+Here is a screenshot that illustrates some of the previously mentioned blockchain commands:
+
+![alt](https://github.com/AlexanderFalk/blockchain/blob/working-blockchain/Blockchain_Demo.png)
+
+
+
 ## References
 
 - https://hackernoon.com/learn-blockchains-by-building-one-117428612f46
 - https://docs.docker.com/compose/compose-file/
 - https://jeiwan.cc/posts/building-blockchain-in-go-part-1/
 - https://github.com/datsoftlyngby/soft2017fall-lsd-teaching-material/blob/master/lecture_notes/03-Containers%20and%20VMs.ipynb
+- https://en.bitcoin.it/wiki/Transaction
+- https://github.com/boltdb/bolt#using-buckets
+- https://en.wikipedia.org/wiki/Merkle_tree
+- http://www.righto.com/2014/02/bitcoin-mining-hard-way-algorithms.html
+- https://en.wikipedia.org/wiki/Cryptographic_nonce
+- https://en.bitcoin.it/wiki/Proof_of_work
+- https://en.bitcoin.it/wiki/Hashcash
+- https://en.bitcoin.it/wiki/Block_hashing_algorithm
+- https://en.bitcoin.it/wiki/Coinbase
